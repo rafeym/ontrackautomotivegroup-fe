@@ -9,57 +9,11 @@ import { CarImageSection } from "@/components/CarImageGallery";
 import BookAppointmentModal from "@/components/BookingAppointmentModal";
 import { Separator } from "@/components/ui/separator";
 import CarfaxButton from "@/components/CarfaxButton";
-import { Metadata } from "next";
 
 // Generate static params at build time
 export async function generateStaticParams() {
   const slugs: { slug: string }[] = await fetchSanityQuery(getAllCarSlugsQuery);
   return slugs.map(({ slug }) => ({ slug }));
-}
-
-// Add generateMetadata for better SEO
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const car = await fetchSanityQuery(getCarBySlugQuery, { slug: params.slug });
-
-  if (!car) {
-    return {
-      title: "Car Not Found",
-      description: "The requested vehicle could not be found.",
-    };
-  }
-
-  const title = `${car.year} ${car.make} ${car.model} - Car Details`;
-  const description = `View details for this ${car.year} ${car.make} ${car.model} including price, specifications, and more.`;
-
-  return {
-    title,
-    description,
-    // openGraph: {
-    //   title,
-    //   description,
-    //   type: "article",
-    //   images: car.images?.[0]
-    //     ? [
-    //         {
-    //           url: urlFor(car.images[0]).url(),
-    //           width: 1200,
-    //           height: 630,
-    //           alt: `${car.year} ${car.make} ${car.model}`,
-    //         },
-    //       ]
-    //     : undefined,
-    // },
-    // twitter: {
-    //   card: "summary_large_image",
-    //   title,
-    //   description,
-    //   images: car.images?.[0] ? [urlFor(car.images[0]).url()] : undefined,
-    // },
-  };
 }
 
 export type paramsType = Promise<{ slug: string }>;
