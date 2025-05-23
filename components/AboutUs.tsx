@@ -24,21 +24,15 @@ export function AboutUs() {
   return (
     <section className="py-16 px-4 md:px-8 bg-white">
       <div className="max-w-5xl mx-auto text-center">
-        <h2 className="text-3xl font-bold mb-6">
-          About OnTrackAutomotiveGroup
-        </h2>
+        <h2 className="text-3xl font-bold mb-6">More Than Just Cars</h2>
         <p className="text-gray-700 text-lg mb-5 leading-relaxed">
           At{" "}
           <span className="font-semibold text-black">
             OnTrackAutomotiveGroup
           </span>
-          , we go beyond just selling cars — we deliver trust, quality, and
-          service you can count on. With years of industry experience, expert
-          advisors, and a commitment to transparency, we offer a hand-picked
-          inventory and a customer-first approach to ensure you drive away happy
-          every time. Whether you are searching for your first vehicle or
-          upgrading to something extraordinary, discover the difference of
-          working with a team that truly puts your journey first.
+          , we are committed to delivering more than just a great vehicle — we
+          are here to give you peace of mind. From expert guidance to
+          transparent pricing, discover what makes us different.
         </p>
       </div>
 
