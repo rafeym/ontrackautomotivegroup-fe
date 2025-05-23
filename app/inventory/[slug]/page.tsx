@@ -37,7 +37,7 @@ export default async function CarDetailsPage(props: { params: paramsType }) {
           <div className="mt-8">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold mb-0">Description</h3>
-              <div className="flex gap-2">
+              <div className="hidden gap-2 min-[505px]:flex ">
                 <BookAppointmentModal
                   car={{
                     vin: car.vin,
@@ -62,6 +62,20 @@ export default async function CarDetailsPage(props: { params: paramsType }) {
           <div className="text-muted-foreground">
             <p className="font-medium">{car.dealership}</p>
             <p>{car.address}</p>
+          </div>
+          <div className="flex flex-col gap-2 mt-5 min-[505px]:hidden">
+            <BookAppointmentModal
+              car={{
+                vin: car.vin,
+                make: car.make,
+                model: car.model,
+                year: car.year,
+                mileage: car.mileage,
+                price: car.price,
+              }}
+              disabled={!car.isAvailable}
+            />
+            <CarfaxButton carfaxUrl={car.carfaxUrl} />
           </div>
         </div>
       </div>
