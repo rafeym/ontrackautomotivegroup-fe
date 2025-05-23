@@ -1,0 +1,552 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import Filters from "./Filters";
+import { formatCurrency } from "@/lib/utils";
+import Link from "next/link";
+import { getAllCarsQuery } from "@/lib/queries";
+import { urlFor } from "@/lib/imageUrl";
+import { fetchSanityQuery } from "@/lib/fetchSanity";
+import { Car } from "@/lib/types";
+import { SkeletonCard } from "./SkeletonCard";
+import SkeletonFilter from "./SkeletonFilter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Heart } from "lucide-react";
+import { useFavorites } from "@/context/FavoritesContext";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { sanityClient } from "@/lib/sanityClient";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+
+const INITIAL_VISIBLE_COUNT = 9;
+const LOAD_MORE_COUNT = 6;
+
+const InventoryCarCard = () => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [cars, setCars] = useState<Car[]>([]);
+  const [filteredCars, setFilteredCars] = useState<Car[]>([]);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [sortBy, setSortBy] = useState("newest");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const [pendingFilters, setPendingFilters] = useState<{
+    make: string[];
+    model: string[];
+    year: string[];
+    fuelType: string[];
+    transmission: string[];
+    bodyType: string[];
+  }>({
+    make: [],
+    model: [],
+    year: [],
+    fuelType: [],
+    transmission: [],
+    bodyType: [],
+  });
+
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
+
+  // Effect to handle URL parameters
+  useEffect(() => {
+    if (cars.length === 0) return; // Wait for cars to load
+
+    const make = searchParams.get("make")?.split(",") || [];
+    const model = searchParams.get("model")?.split(",") || [];
+    const year = searchParams.get("year")?.split(",") || [];
+    const fuelType = searchParams.get("fuelType")?.split(",") || [];
+    const transmission = searchParams.get("transmission")?.split(",") || [];
+    const bodyType = searchParams.get("bodyType")?.split(",") || [];
+
+    const newFilters = {
+      make,
+      model,
+      year,
+      fuelType,
+      transmission,
+      bodyType,
+    };
+
+    setPendingFilters(newFilters);
+
+    // Apply the filters
+    const filtered = cars.filter((car) => {
+      const matchMake = make.length === 0 || make.includes(car.make);
+      const matchModel = model.length === 0 || model.includes(car.model);
+      const matchYear = year.length === 0 || year.includes(car.year.toString());
+      const matchFuelType =
+        fuelType.length === 0 || fuelType.includes(car.fuelType ?? "");
+      const matchTransmission =
+        transmission.length === 0 ||
+        transmission.includes(car.transmission ?? "");
+      const matchBodyType =
+        bodyType.length === 0 || bodyType.includes(car.bodyType ?? "");
+      return (
+        matchMake &&
+        matchModel &&
+        matchYear &&
+        matchFuelType &&
+        matchTransmission &&
+        matchBodyType
+      );
+    });
+
+    setFilteredCars(sortCars(filtered, sortBy));
+  }, [searchParams, cars]);
+
+  useEffect(() => {
+    async function loadCars() {
+      const allCars: Car[] = await fetchSanityQuery(getAllCarsQuery);
+      setCars(allCars);
+      setFilteredCars(sortCars(allCars, sortBy));
+    }
+    loadCars();
+
+    // Set up real-time listener
+    const subscription = sanityClient
+      .listen(getAllCarsQuery)
+      .subscribe(async () => {
+        // When a change occurs, fetch the latest data
+        const allCars: Car[] = await fetchSanityQuery(getAllCarsQuery);
+        setCars(allCars);
+        setFilteredCars(sortCars(allCars, sortBy));
+      });
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const sortCars = (carsToSort: Car[], sortKey: string) => {
+    return [...carsToSort].sort((a, b) => {
+      switch (sortKey) {
+        case "newest":
+          return b.year - a.year;
+        case "oldest":
+          return a.year - b.year;
+        case "price-low":
+          return a.price - b.price;
+        case "price-high":
+          return b.price - a.price;
+        case "mileage-low":
+          return (a.mileage || 0) - (b.mileage || 0);
+        case "mileage-high":
+          return (b.mileage || 0) - (a.mileage || 0);
+        default:
+          return 0;
+      }
+    });
+  };
+
+  const handleApplyFilters = async (filters: typeof pendingFilters) => {
+    const hasActiveFilters =
+      filters.make.length > 0 ||
+      filters.model.length > 0 ||
+      filters.year.length > 0 ||
+      filters.fuelType.length > 0 ||
+      filters.transmission.length > 0 ||
+      filters.bodyType.length > 0;
+
+    // Update URL with filter parameters
+    const params = new URLSearchParams();
+    if (filters.make.length > 0) params.set("make", filters.make.join(","));
+    if (filters.model.length > 0) params.set("model", filters.model.join(","));
+    if (filters.year.length > 0) params.set("year", filters.year.join(","));
+    if (filters.fuelType.length > 0)
+      params.set("fuelType", filters.fuelType.join(","));
+    if (filters.transmission.length > 0)
+      params.set("transmission", filters.transmission.join(","));
+    if (filters.bodyType.length > 0)
+      params.set("bodyType", filters.bodyType.join(","));
+
+    // Update URL without refreshing the page
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+
+    if (hasActiveFilters) {
+      setIsFiltering(true);
+    }
+
+    const filterPromise = new Promise<void>((resolve) => {
+      const filtered = cars.filter((car) => {
+        const matchMake =
+          filters.make.length === 0 || filters.make.includes(car.make);
+        const matchModel =
+          filters.model.length === 0 || filters.model.includes(car.model);
+        const matchYear =
+          filters.year.length === 0 ||
+          filters.year.includes(car.year.toString());
+        const matchFuelType =
+          filters.fuelType.length === 0 ||
+          filters.fuelType.includes(car.fuelType ?? "");
+        const matchTransmission =
+          filters.transmission.length === 0 ||
+          filters.transmission.includes(car.transmission ?? "");
+        const matchBodyType =
+          filters.bodyType.length === 0 ||
+          filters.bodyType.includes(car.bodyType ?? "");
+        return (
+          matchMake &&
+          matchModel &&
+          matchYear &&
+          matchFuelType &&
+          matchTransmission &&
+          matchBodyType
+        );
+      });
+      setFilteredCars(sortCars(filtered, sortBy));
+      setVisibleCount(INITIAL_VISIBLE_COUNT);
+      resolve();
+    });
+
+    await Promise.all([
+      filterPromise,
+      new Promise((resolve) => setTimeout(resolve, 500)),
+    ]);
+
+    setIsFiltering(false);
+  };
+
+  const handleResetFilters = () => {
+    setPendingFilters({
+      make: [],
+      model: [],
+      year: [],
+      fuelType: [],
+      transmission: [],
+      bodyType: [],
+    });
+    setFilteredCars(sortCars(cars, sortBy));
+    setVisibleCount(INITIAL_VISIBLE_COUNT);
+    router.push(pathname, { scroll: false });
+  };
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
+    const sorted = sortCars(filteredCars, value);
+    setFilteredCars(sorted);
+  };
+
+  const pendingResults = cars.filter((car) => {
+    const matchMake =
+      pendingFilters.make.length === 0 ||
+      pendingFilters.make.includes(car.make);
+    const matchModel =
+      pendingFilters.model.length === 0 ||
+      pendingFilters.model.includes(car.model);
+    const matchYear =
+      pendingFilters.year.length === 0 ||
+      pendingFilters.year.includes(car.year.toString());
+    const matchFuelType =
+      pendingFilters.fuelType.length === 0 ||
+      pendingFilters.fuelType.includes(car.fuelType ?? "");
+    const matchTransmission =
+      pendingFilters.transmission.length === 0 ||
+      pendingFilters.transmission.includes(car.transmission ?? "");
+    const matchBodyType =
+      pendingFilters.bodyType.length === 0 ||
+      pendingFilters.bodyType.includes(car.bodyType ?? "");
+    return (
+      matchMake &&
+      matchModel &&
+      matchYear &&
+      matchFuelType &&
+      matchTransmission &&
+      matchBodyType
+    );
+  }).length;
+
+  const isLoading = cars.length === 0;
+  const visibleCars = filteredCars.slice(0, visibleCount);
+  const hasMoreToShow = visibleCount < filteredCars.length;
+
+  return (
+    <div className="relative">
+      <div className="flex flex-col lg:flex-row px-4 py-8 gap-8">
+        {/* Sidebar */}
+        <aside className="hidden lg:block w-64 sticky top-4 self-start">
+          {isLoading ? (
+            <SkeletonFilter />
+          ) : (
+            <Filters
+              onApplyFilters={handleApplyFilters}
+              pendingFilters={pendingFilters}
+              setPendingFilters={setPendingFilters}
+              resultsCount={pendingResults}
+            />
+          )}
+        </aside>
+
+        {/* Car Grid */}
+        <section className="flex-1">
+          {/* Sort and Filters Row */}
+          <div className="flex flex-col gap-2 mb-4">
+            <div className="flex justify-between items-center">
+              {/* Active Filters - Mobile/Tablet */}
+              <div className="lg:hidden flex-1 mr-4">
+                {!isLoading &&
+                Object.values(pendingFilters).some((arr) => arr.length > 0) ? (
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Active Filters:
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(pendingFilters).map(
+                        ([category, values]) =>
+                          (values as string[]).map((value: string) => (
+                            <Badge
+                              key={`${category}-${value}`}
+                              variant="secondary"
+                              className="capitalize"
+                            >
+                              {value}
+                            </Badge>
+                          ))
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  !isLoading && (
+                    <span className="text-sm text-muted-foreground">
+                      Use filters to find your perfect match
+                    </span>
+                  )
+                )}
+              </div>
+
+              {/* Sort Dropdown */}
+              <div className="lg:ml-auto">
+                <Select value={sortBy} onValueChange={handleSortChange}>
+                  <SelectTrigger className="w-52">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest</SelectItem>
+                    <SelectItem value="oldest">Oldest</SelectItem>
+                    <SelectItem value="price-low">
+                      Price: Low to High
+                    </SelectItem>
+                    <SelectItem value="price-high">
+                      Price: High to Low
+                    </SelectItem>
+                    <SelectItem value="mileage-low">
+                      Mileage: Low to High
+                    </SelectItem>
+                    <SelectItem value="mileage-high">
+                      Mileage: High to Low
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* No results */}
+          {!isLoading && !isFiltering && filteredCars.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-center text-gray-600 space-y-4">
+              <p className="text-lg font-semibold">
+                No cars found with the selected filters.
+              </p>
+              <p className="max-w-sm">
+                Please refine your filters to see available cars.
+              </p>
+              <Button variant="outline" onClick={handleResetFilters}>
+                Reset Filters
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 content-start">
+              {isLoading || isFiltering
+                ? Array.from({ length: 6 }).map((_, i) => (
+                    <SkeletonCard key={i} />
+                  ))
+                : visibleCars.map((car) => (
+                    <Card
+                      key={car._id}
+                      className="hover:shadow-lg transition rounded-xl overflow-hidden group relative border"
+                    >
+                      <CardHeader className="p-0 relative">
+                        <img
+                          src={urlFor(car.images?.[0])?.url()}
+                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                          alt={`${car.year} ${car.make} ${car.model} ${car.trim}`}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (isFavorite(car._id)) {
+                              removeFromFavorites(car._id);
+                            } else {
+                              addToFavorites(car);
+                            }
+                          }}
+                        >
+                          <Heart
+                            className={`w-5 h-5 ${
+                              isFavorite(car._id)
+                                ? "text-red-500 fill-red-500"
+                                : "text-gray-500"
+                            }`}
+                          />
+                        </Button>
+                      </CardHeader>
+
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-md font-semibold line-clamp-1">
+                            {car.year} {car.make} {car.model} {car.trim}
+                          </h3>
+                          {car.isAvailable ? (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                              In Stock
+                            </span>
+                          ) : (
+                            <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">
+                              Sold
+                            </span>
+                          )}
+                        </div>
+
+                        {car.address && (
+                          <p className="text-xs text-muted-foreground">
+                            {car.address}
+                          </p>
+                        )}
+
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>
+                            Mileage: {car.mileage?.toLocaleString()} km
+                          </span>
+                          <span className="text-blue-600 font-semibold text-sm">
+                            {formatCurrency(car.price)}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          {car.fuelType && (
+                            <span className="bg-gray-100 px-2 py-0.5 rounded">
+                              {car.fuelType}
+                            </span>
+                          )}
+                          {car.transmission && (
+                            <span className="bg-gray-100 px-2 py-0.5 rounded">
+                              {car.transmission}
+                            </span>
+                          )}
+                          {car.bodyType && (
+                            <span className="bg-gray-100 px-2 py-0.5 rounded">
+                              {car.bodyType}
+                            </span>
+                          )}
+                        </div>
+
+                        <Link href={`/inventory/${car.slug.current}`}>
+                          <Button className="mt-3 w-full">View Details</Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  ))}
+            </div>
+          )}
+
+          {/* Show More */}
+          {hasMoreToShow &&
+            !isLoading &&
+            !isFiltering &&
+            filteredCars.length > 0 && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  onClick={async () => {
+                    setIsLoadingMore(true);
+                    await new Promise((res) => setTimeout(res, 500));
+                    setVisibleCount((prev) => prev + LOAD_MORE_COUNT);
+                    setIsLoadingMore(false);
+                  }}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? (
+                    <svg
+                      className="animate-spin mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                  ) : (
+                    "View More"
+                  )}
+                </Button>
+              </div>
+            )}
+        </section>
+      </div>
+
+      {/* Mobile Filters */}
+      <div className="lg:hidden fixed bottom-4 right-4 z-50">
+        <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+          <SheetTrigger asChild>
+            <Button className="rounded-full px-6 py-3 shadow-lg">
+              Filters
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left">
+            <SheetHeader>
+              <VisuallyHidden>
+                <SheetTitle>Filter Drawer</SheetTitle>
+              </VisuallyHidden>
+            </SheetHeader>
+            <div className="py-4">
+              <Filters
+                onApplyFilters={(filters) => {
+                  handleApplyFilters(filters);
+                }}
+                pendingFilters={pendingFilters}
+                setPendingFilters={setPendingFilters}
+                resultsCount={pendingResults}
+                onClose={() => setIsDrawerOpen(false)}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+    </div>
+  );
+};
+
+export default InventoryCarCard;
