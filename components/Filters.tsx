@@ -13,14 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 
-import {
-  getAllMakesQuery,
-  getAllModelsQuery,
-  getAllYearsQuery,
-  getAllFuelTypesQuery,
-  getAllTransmissionsQuery,
-  getAllBodyTypesQuery,
-} from "@/lib/queries";
+import { getAllFilterOptionsQuery } from "@/lib/queries";
 import { fetchSanityQuery } from "@/lib/fetchSanity";
 
 interface FiltersProps {
@@ -94,38 +87,26 @@ const Filters = ({
   // Fetch all filter options
   useEffect(() => {
     async function fetchOptions() {
-      const [
-        fetchedMakes,
-        fetchedModels,
-        fetchedYears,
-        fetchedFuelTypes,
-        fetchedTransmissions,
-        fetchedBodyTypes,
-      ] = await Promise.all([
-        fetchSanityQuery(getAllMakesQuery),
-        fetchSanityQuery(getAllModelsQuery),
-        fetchSanityQuery(getAllYearsQuery),
-        fetchSanityQuery(getAllFuelTypesQuery),
-        fetchSanityQuery(getAllTransmissionsQuery),
-        fetchSanityQuery(getAllBodyTypesQuery),
-      ]);
+      const data = (await fetchSanityQuery(getAllFilterOptionsQuery)) as {
+        makes: string[];
+        models: { make: string; model: string; year: number }[];
+        years: number[];
+        fuelTypes: string[];
+        transmissions: string[];
+        bodyTypes: string[];
+      };
 
-      setMakes(Array.from(new Set(fetchedMakes as string[])).sort());
-      setModelOptions(
-        (fetchedModels as FilterOption[]).filter(
-          (entry) => entry.make && entry.model
-        )
-      );
+      // Remove duplicates and sort
+      setMakes([...new Set(data.makes)].sort());
+      setModelOptions(data.models.filter((entry) => entry.make && entry.model));
       setYears(
-        Array.from(
-          new Set((fetchedYears as (string | number)[]).map(String))
-        ).sort()
+        Array.from(new Set(data.years))
+          .map(String)
+          .sort((a, b) => Number(b) - Number(a))
       );
-      setFuelTypes(Array.from(new Set(fetchedFuelTypes as string[])).sort());
-      setTransmissions(
-        Array.from(new Set(fetchedTransmissions as string[])).sort()
-      );
-      setBodyTypes(Array.from(new Set(fetchedBodyTypes as string[])).sort());
+      setFuelTypes([...new Set(data.fuelTypes)].sort());
+      setTransmissions([...new Set(data.transmissions)].sort());
+      setBodyTypes([...new Set(data.bodyTypes)].sort());
     }
 
     fetchOptions();
@@ -156,10 +137,11 @@ const Filters = ({
               pendingFilters.model.includes(entry.model);
             return makeMatch && modelMatch;
           })
-          .map((entry) => entry.year?.toString())
-          .filter((year): year is string => typeof year === "string")
+          .map((entry) => entry.year)
       )
-    ).sort();
+    )
+      .map(String)
+      .sort((a, b) => Number(b) - Number(a));
 
     return { filteredModels, filteredYears };
   };
@@ -333,7 +315,7 @@ const Filters = ({
                 <SelectContent>
                   <SelectItem value="all">All Years</SelectItem>
                   {filteredYears.map((year) => (
-                    <SelectItem key={year} value={year}>
+                    <SelectItem key={year} value={String(year)}>
                       {year}
                     </SelectItem>
                   ))}

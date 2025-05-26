@@ -66,33 +66,6 @@ export const getCarBySlugQuery = `
   }
 `;
 
-// 1) Fetch all distinct makes
-export const getAllMakesQuery = `
-  // get array of all makes
-  *[_type=="car"].make
-`;
-
-// 2) Fetch all models with their corresponding makes
-export const getAllModelsQuery = `
-  *[_type == "car"]{
-    make,
-    model,
-    year
-  }
-`;
-
-// 3) all years
-export const getAllYearsQuery = `*[_type=="car"].year`;
-
-// 4) all fuel types
-export const getAllFuelTypesQuery = `*[_type=="car"].fuelType`;
-
-// 5) all transmissions
-export const getAllTransmissionsQuery = `*[_type=="car"].transmission`;
-
-// 6) all body types
-export const getAllBodyTypesQuery = `*[_type=="car"].bodyType`;
-
 // Query to get the latest cars for the featured listing component
 export const getLatestCarsQuery = `
   *[_type == "car"] | order(_createdAt desc)[0...3]{
@@ -122,3 +95,13 @@ export const getLatestCarsQuery = `
     carfaxUrl
   }
 `;
+
+// Combined query for all filter options
+export const getAllFilterOptionsQuery = `{
+  "makes": *[_type == "car"].make,
+  "models": *[_type == "car"]{make, model, year},
+  "years": *[_type == "car"].year,
+  "fuelTypes": *[_type == "car"].fuelType,
+  "transmissions": *[_type == "car"].transmission,
+  "bodyTypes": *[_type == "car"].bodyType
+}`;

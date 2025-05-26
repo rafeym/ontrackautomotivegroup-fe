@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { fetchSanityQuery } from "@/lib/fetchSanity";
 import { getAllCarsQuery } from "@/lib/queries";
 import { Car } from "@/lib/types";
+import { cachedSanityClient } from "@/lib/sanityClient";
 
 const Favourites = () => {
   const { favorites, removeFromFavorites } = useFavorites();
@@ -22,7 +23,7 @@ const Favourites = () => {
 
     async function validateFavorites() {
       try {
-        const allCars: Car[] = await fetchSanityQuery(getAllCarsQuery);
+        const allCars: Car[] = await cachedSanityClient.fetch(getAllCarsQuery);
         const validCarIds = new Set(allCars.map((car) => car._id));
 
         favorites.forEach((favorite) => {

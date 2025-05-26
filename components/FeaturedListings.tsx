@@ -9,6 +9,7 @@ import { getLatestCarsQuery } from "@/lib/queries";
 import { Car } from "@/lib/types";
 import { urlFor } from "@/lib/imageUrl";
 import { formatCurrency } from "@/lib/utils";
+import { cachedSanityClient } from "@/lib/sanityClient";
 
 export function FeaturedListings() {
   const [cars, setCars] = useState<Car[]>([]);
@@ -17,7 +18,7 @@ export function FeaturedListings() {
   useEffect(() => {
     async function loadLatestCars() {
       try {
-        const latestCars = await fetchSanityQuery(getLatestCarsQuery);
+        const latestCars = await cachedSanityClient.fetch(getLatestCarsQuery);
         setCars(latestCars);
       } catch (error) {
         console.error("Error loading latest cars:", error);

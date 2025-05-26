@@ -30,7 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { Heart } from "lucide-react";
 import { useFavorites } from "@/context/FavoritesContext";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { sanityClient } from "@/lib/sanityClient";
+import { sanityClient, cachedSanityClient } from "@/lib/sanityClient";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 const INITIAL_VISIBLE_COUNT = 9;
@@ -115,23 +115,30 @@ const InventoryCarCard = () => {
 
   useEffect(() => {
     async function loadCars() {
-      const allCars: Car[] = await fetchSanityQuery(getAllCarsQuery);
+      // Use cached client for initial data fetch
+      const allCars: Car[] = await cachedSanityClient.fetch(getAllCarsQuery);
       setCars(allCars);
       setFilteredCars(sortCars(allCars, sortBy));
     }
     loadCars();
 
-    // Set up real-time listener
+    // Only set up real-time listener if we need live updates
     const subscription = sanityClient
       .listen(getAllCarsQuery)
-      .subscribe(async () => {
-        // When a change occurs, fetch the latest data
-        const allCars: Car[] = await fetchSanityQuery(getAllCarsQuery);
-        setCars(allCars);
-        setFilteredCars(sortCars(allCars, sortBy));
+      .subscribe(async (update) => {
+        // Only refetch if there's a relevant change
+        if (
+          update.transition === "update" ||
+          update.transition === "appear" ||
+          update.transition === "disappear"
+        ) {
+          const allCars: Car[] =
+            await cachedSanityClient.fetch(getAllCarsQuery);
+          setCars(allCars);
+          setFilteredCars(sortCars(allCars, sortBy));
+        }
       });
 
-    // Cleanup subscription on unmount
     return () => {
       subscription.unsubscribe();
     };
