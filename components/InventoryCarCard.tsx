@@ -192,6 +192,9 @@ const InventoryCarCard = () => {
       setIsFiltering(true);
     }
 
+    // Close the drawer immediately
+    setIsDrawerOpen(false);
+
     const filterPromise = new Promise<void>((resolve) => {
       const filtered = cars.filter((car) => {
         const matchMake =
@@ -305,63 +308,94 @@ const InventoryCarCard = () => {
         {/* Car Grid */}
         <section className="flex-1">
           {/* Sort and Filters Row */}
-          <div className="flex flex-col gap-2 mb-4">
-            <div className="flex justify-between items-center">
-              {/* Active Filters - Mobile/Tablet */}
-              <div className="lg:hidden flex-1 mr-4">
-                {!isLoading &&
-                Object.values(pendingFilters).some((arr) => arr.length > 0) ? (
-                  <div className="space-y-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Active Filters:
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(pendingFilters).map(
-                        ([category, values]) =>
-                          (values as string[]).map((value: string) => (
-                            <Badge
-                              key={`${category}-${value}`}
-                              variant="secondary"
-                              className="capitalize"
-                            >
-                              {value}
-                            </Badge>
-                          ))
-                      )}
+          <div className="sticky top-0 z-10 bg-white pb-4 pt-2">
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                {/* Active Filters - Mobile/Tablet */}
+                <div className="lg:hidden flex-1 mr-4">
+                  {!isLoading &&
+                  Object.values(pendingFilters).some(
+                    (arr) => arr.length > 0
+                  ) ? (
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Active Filters:
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(pendingFilters).map(
+                          ([category, values]) =>
+                            (values as string[]).map((value: string) => (
+                              <Badge
+                                key={`${category}-${value}`}
+                                variant="secondary"
+                                className="capitalize"
+                              >
+                                {value}
+                              </Badge>
+                            ))
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  !isLoading && (
-                    <span className="text-sm text-muted-foreground">
-                      Use filters to find your perfect match
-                    </span>
-                  )
-                )}
+                  ) : (
+                    !isLoading && (
+                      <span className="text-sm text-muted-foreground">
+                        Use filters to find your perfect match
+                      </span>
+                    )
+                  )}
+                </div>
+
+                {/* Sort Dropdown */}
+                <div className="lg:ml-auto">
+                  <Select value={sortBy} onValueChange={handleSortChange}>
+                    <SelectTrigger className="w-52">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest</SelectItem>
+                      <SelectItem value="oldest">Oldest</SelectItem>
+                      <SelectItem value="price-low">
+                        Price: Low to High
+                      </SelectItem>
+                      <SelectItem value="price-high">
+                        Price: High to Low
+                      </SelectItem>
+                      <SelectItem value="mileage-low">
+                        Mileage: Low to High
+                      </SelectItem>
+                      <SelectItem value="mileage-high">
+                        Mileage: High to Low
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              {/* Sort Dropdown */}
-              <div className="lg:ml-auto">
-                <Select value={sortBy} onValueChange={handleSortChange}>
-                  <SelectTrigger className="w-52">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="newest">Newest</SelectItem>
-                    <SelectItem value="oldest">Oldest</SelectItem>
-                    <SelectItem value="price-low">
-                      Price: Low to High
-                    </SelectItem>
-                    <SelectItem value="price-high">
-                      Price: High to Low
-                    </SelectItem>
-                    <SelectItem value="mileage-low">
-                      Mileage: Low to High
-                    </SelectItem>
-                    <SelectItem value="mileage-high">
-                      Mileage: High to Low
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+              {/* Mobile Filters Button */}
+              <div className="lg:hidden">
+                <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                  <SheetTrigger asChild>
+                    <Button className="w-full">Advanced Filters</Button>
+                  </SheetTrigger>
+                  <SheetContent side="left">
+                    <SheetHeader>
+                      <VisuallyHidden>
+                        <SheetTitle>Filter Drawer</SheetTitle>
+                      </VisuallyHidden>
+                    </SheetHeader>
+                    <div className="py-4">
+                      <Filters
+                        onApplyFilters={(filters) => {
+                          handleApplyFilters(filters);
+                        }}
+                        pendingFilters={pendingFilters}
+                        setPendingFilters={setPendingFilters}
+                        resultsCount={pendingResults}
+                        onClose={() => setIsDrawerOpen(false)}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </div>
             </div>
           </div>
@@ -521,35 +555,6 @@ const InventoryCarCard = () => {
               </div>
             )}
         </section>
-      </div>
-
-      {/* Mobile Filters */}
-      <div className="lg:hidden fixed bottom-4 right-4 z-50">
-        <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-          <SheetTrigger asChild>
-            <Button className="rounded-full px-6 py-3 shadow-lg">
-              Filters
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left">
-            <SheetHeader>
-              <VisuallyHidden>
-                <SheetTitle>Filter Drawer</SheetTitle>
-              </VisuallyHidden>
-            </SheetHeader>
-            <div className="py-4">
-              <Filters
-                onApplyFilters={(filters) => {
-                  handleApplyFilters(filters);
-                }}
-                pendingFilters={pendingFilters}
-                setPendingFilters={setPendingFilters}
-                resultsCount={pendingResults}
-                onClose={() => setIsDrawerOpen(false)}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
       </div>
     </div>
   );

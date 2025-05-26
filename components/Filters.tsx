@@ -81,7 +81,6 @@ const Filters = ({
 
     const filtersFromURL = parseFilters();
     setPendingFilters(filtersFromURL);
-    onApplyFilters(filtersFromURL);
   }, []);
 
   // Fetch all filter options
