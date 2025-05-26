@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create the booking within the transaction
-    const booking = await transaction.create({
+    await transaction.create({
       _type: "booking",
       name,
       email,
