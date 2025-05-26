@@ -15,7 +15,6 @@ import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { getAllCarsQuery } from "@/lib/queries";
 import { urlFor } from "@/lib/imageUrl";
-import { fetchSanityQuery } from "@/lib/fetchSanity";
 import { Car } from "@/lib/types";
 import { SkeletonCard } from "./SkeletonCard";
 import SkeletonFilter from "./SkeletonFilter";

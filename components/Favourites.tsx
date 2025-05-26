@@ -8,7 +8,6 @@ import Link from "next/link";
 import { urlFor } from "@/lib/imageUrl";
 import { Heart } from "lucide-react";
 import { useEffect, useState } from "react";
-import { fetchSanityQuery } from "@/lib/fetchSanity";
 import { getAllCarsQuery } from "@/lib/queries";
 import { Car } from "@/lib/types";
 import { cachedSanityClient } from "@/lib/sanityClient";

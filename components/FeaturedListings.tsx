@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { fetchSanityQuery } from "@/lib/fetchSanity";
 import { getLatestCarsQuery } from "@/lib/queries";
 import { Car } from "@/lib/types";
 import { urlFor } from "@/lib/imageUrl";
