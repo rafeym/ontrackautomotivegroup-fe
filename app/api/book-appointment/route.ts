@@ -76,6 +76,9 @@ export async function POST(req: NextRequest) {
   } = data;
 
   try {
+    // Start a transaction
+    const transaction = sanityClient.transaction();
+
     // Check if car is available
     const carData = await sanityClient.fetch(
       `*[_type == "car" && vin == $vin][0]{isAvailable}`,
@@ -115,7 +118,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const booking = await sanityClient.create({
+    // Create the booking within the transaction
+    const booking = await transaction.create({
       _type: "booking",
       name,
       email,
@@ -132,6 +136,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Commit the transaction
+    const result = await transaction.commit();
+
+    // Send notifications after successful booking
     const message = `Hi ${name}, we've received your appointment request for the ${year} ${make} ${model} (VIN: ${vin}). A representative will contact you soon to confirm your appointment on ${dateOnlyString} at ${timeSlot}. Thank you!`;
 
     await client.messages.create({
@@ -178,7 +186,10 @@ export async function POST(req: NextRequest) {
   `,
     });
 
-    return NextResponse.json({ success: true, bookingId: booking._id });
+    return NextResponse.json({
+      success: true,
+      bookingId: result.results[0].id,
+    });
   } catch (error: unknown) {
     console.error("Error booking:", error);
     if (error instanceof Error) {
