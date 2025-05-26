@@ -18,19 +18,6 @@ const formatPhoneNumber = (phone: string) => {
   throw new Error("Invalid Canadian phone number");
 };
 
-// Helper function to check if a slot is available
-async function isSlotAvailable(
-  date: string,
-  timeSlot: string,
-  vin: string
-): Promise<boolean> {
-  const existing = await sanityClient.fetch(
-    `*[_type == "booking" && date == $date && timeSlot == $timeSlot && car.vin == $vin]`,
-    { date, timeSlot, vin }
-  );
-  return !Array.isArray(existing) || existing.length === 0;
-}
-
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const date = url.searchParams.get("date");
@@ -89,10 +76,10 @@ export async function POST(req: NextRequest) {
   } = data;
 
   try {
-    const dateOnlyString = date.split("T")[0]; // Keep only YYYY-MM-DD
-    const formattedPhone = formatPhoneNumber(phone);
+    // Start a transaction
+    const transaction = sanityClient.transaction();
 
-    // First check if car is available
+    // Check if car is available
     const carData = await sanityClient.fetch(
       `*[_type == "car" && vin == $vin][0]{isAvailable}`,
       { vin }
@@ -115,17 +102,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if slot is available
-    const slotAvailable = await isSlotAvailable(dateOnlyString, timeSlot, vin);
-    if (!slotAvailable) {
+    const dateOnlyString = date.split("T")[0]; // Keep only YYYY-MM-DD
+    const formattedPhone = formatPhoneNumber(phone);
+
+    // Check if time slot is already booked for this date and car
+    const existing = await sanityClient.fetch(
+      `*[_type == "booking" && date == $date && timeSlot == $timeSlot && car.vin == $vin]`,
+      { date: dateOnlyString, timeSlot, vin }
+    );
+
+    if (Array.isArray(existing) && existing.length > 0) {
       return NextResponse.json(
         { success: false, error: "This time slot is already booked." },
         { status: 400 }
       );
     }
 
-    // Create the booking
-    const booking = await sanityClient.create({
+    // Create the booking within the transaction
+    await transaction.create({
       _type: "booking",
       name,
       email,
@@ -142,24 +136,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Double-check if the slot is still available after creation
-    const slotStillAvailable = await isSlotAvailable(
-      dateOnlyString,
-      timeSlot,
-      vin
-    );
-    if (!slotStillAvailable) {
-      // If slot is no longer available, delete our booking and return error
-      await sanityClient.delete(booking._id);
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "This time slot was just booked by someone else. Please try another slot.",
-        },
-        { status: 409 }
-      );
-    }
+    // Commit the transaction
+    const result = await transaction.commit();
 
     // Send notifications after successful booking
     const message = `Hi ${name}, we've received your appointment request for the ${year} ${make} ${model} (VIN: ${vin}). A representative will contact you soon to confirm your appointment on ${dateOnlyString} at ${timeSlot}. Thank you!`;
@@ -208,7 +186,10 @@ export async function POST(req: NextRequest) {
   `,
     });
 
-    return NextResponse.json({ success: true, bookingId: booking._id });
+    return NextResponse.json({
+      success: true,
+      bookingId: result.results[0].id,
+    });
   } catch (error: unknown) {
     console.error("Error booking:", error);
     if (error instanceof Error) {
