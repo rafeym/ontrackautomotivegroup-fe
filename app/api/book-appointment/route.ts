@@ -140,7 +140,8 @@ export async function POST(req: NextRequest) {
     const result = await transaction.commit();
 
     // Send notifications
-    const message = `Hi ${name}, we've received your appointment request for the ${year} ${make} ${model} (VIN: ${vin}). A representative will contact you soon to confirm your appointment on ${dateOnlyString} at ${timeSlot}. Thank you!`;
+
+    const message = `OnTrackAutomotiveGroup: Hi ${name}, we’ve received your appointment request for the ${year} ${make} ${model} (VIN: ${vin}). We’ll contact you soon to confirm your appointment on ${dateOnlyString} at ${timeSlot}. Thank you!`;
 
     await client.messages.create({
       body: message,
