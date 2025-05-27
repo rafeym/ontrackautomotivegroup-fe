@@ -9,6 +9,9 @@ import { CarImageSection } from "@/components/CarImageGallery";
 import BookAppointmentModal from "@/components/BookingAppointmentModal";
 import { Separator } from "@/components/ui/separator";
 import CarfaxButton from "@/components/CarfaxButton";
+import { Metadata } from "next";
+
+export type paramsType = Promise<{ slug: string }>;
 
 // Generate static params at build time
 export async function generateStaticParams() {
@@ -16,7 +19,28 @@ export async function generateStaticParams() {
   return slugs.map(({ slug }) => ({ slug }));
 }
 
-export type paramsType = Promise<{ slug: string }>;
+// Add generateMetadata for better SEO
+export async function generateMetadata(props: {
+  params: paramsType;
+}): Promise<Metadata> {
+  const { slug } = await props.params;
+  const car = await fetchSanityQuery(getCarBySlugQuery, { slug });
+
+  if (!car) {
+    return {
+      title: "Car Not Found",
+      description: "The requested vehicle could not be found.",
+    };
+  }
+
+  const title = `${car.year} ${car.make} ${car.model} - Car Details`;
+  const description = `View details for this ${car.year} ${car.make} ${car.model} including price, specifications, and more.`;
+
+  return {
+    title,
+    description,
+  };
+}
 
 export default async function CarDetailsPage(props: { params: paramsType }) {
   const { slug } = await props.params;
