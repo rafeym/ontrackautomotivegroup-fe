@@ -76,10 +76,9 @@ export async function POST(req: NextRequest) {
   } = data;
 
   try {
-    // Start a transaction
     const transaction = sanityClient.transaction();
 
-    // Check if car is available
+    // Check if car exists and is available
     const carData = await sanityClient.fetch(
       `*[_type == "car" && vin == $vin][0]{isAvailable}`,
       { vin }
@@ -102,25 +101,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const dateOnlyString = date.split("T")[0]; // Keep only YYYY-MM-DD
+    const dateOnlyString = date.split("T")[0];
     const formattedPhone = formatPhoneNumber(phone);
+    const bookingKey = `${vin}_${dateOnlyString}_${timeSlot}`;
 
-    // Check if time slot is already booked for this date and car
+    // Atomic check: Has this exact slot already been booked?
     const existing = await sanityClient.fetch(
-      `*[_type == "booking" && date == $date && timeSlot == $timeSlot && car.vin == $vin]`,
-      { date: dateOnlyString, timeSlot, vin }
+      `*[_type == "booking" && bookingKey == $bookingKey][0]`,
+      { bookingKey }
     );
 
-    if (Array.isArray(existing) && existing.length > 0) {
+    if (existing) {
       return NextResponse.json(
         { success: false, error: "This time slot is already booked." },
         { status: 400 }
       );
     }
 
-    // Create the booking within the transaction
-    await transaction.create({
+    // Create booking
+    transaction.create({
       _type: "booking",
+      bookingKey,
       name,
       email,
       phone,
@@ -136,10 +137,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Commit the transaction
     const result = await transaction.commit();
 
-    // Send notifications after successful booking
+    // Send notifications
     const message = `Hi ${name}, we've received your appointment request for the ${year} ${make} ${model} (VIN: ${vin}). A representative will contact you soon to confirm your appointment on ${dateOnlyString} at ${timeSlot}. Thank you!`;
 
     await client.messages.create({
@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
       <hr style="margin: 1rem 0;" />
 
       <h3>Booking Information</h3>
-      <p><strong>Date:</strong> ${date.split("T")[0]}</p>
+      <p><strong>Date:</strong> ${dateOnlyString}</p>
       <p><strong>Time Slot:</strong> ${timeSlot}</p>
 
       <br/>

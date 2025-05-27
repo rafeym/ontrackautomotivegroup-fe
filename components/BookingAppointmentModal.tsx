@@ -77,11 +77,15 @@ export default function BookAppointmentModal({
       }
     };
 
+    // Initial fetch
     fetchBookedSlots();
-    const interval = setInterval(fetchBookedSlots, 10000);
 
-    return () => clearInterval(interval);
-  }, [open, selectedDate, car?.vin || ""]);
+    // Only poll if the modal is open and a time slot is selected
+    if (formData.timeSlot) {
+      const interval = setInterval(fetchBookedSlots, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [open, selectedDate, car?.vin, formData.timeSlot]);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -96,7 +100,7 @@ export default function BookAppointmentModal({
         description: !selectedDate
           ? "Please select a date."
           : "Please select a timeslot",
-        variant: "default",
+        variant: "destructive",
       });
       return;
     }
@@ -104,6 +108,7 @@ export default function BookAppointmentModal({
     setIsSubmitting(true);
 
     try {
+      // Final availability check before booking
       const slotCheck = await fetch(
         `/api/book-appointment?date=${selectedDate.toISOString()}&vin=${car.vin}`
       );
@@ -128,7 +133,7 @@ export default function BookAppointmentModal({
           title: "Error",
           description:
             "Time slot just got booked by someone else. Please select a different one.",
-          variant: "default",
+          variant: "destructive",
         });
         setIsSubmitting(false);
         return;
