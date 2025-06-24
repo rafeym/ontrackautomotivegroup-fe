@@ -13,9 +13,9 @@ export function urlFor(
   if (typeof source === "object" && "url" in source) {
     return {
       url: () => source.url,
-      width: (w: number) => ({
-        height: (h: number) => ({
-          quality: (q: number) => ({ url: () => source.url }),
+      width: (_w: number) => ({
+        height: (_h: number) => ({
+          quality: (_q: number) => ({ url: () => source.url }),
         }),
       }),
     };
