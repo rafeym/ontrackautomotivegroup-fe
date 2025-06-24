@@ -27,4 +27,9 @@ export interface Car {
   slug: {
     current: string;
   };
+  carfaxPdf?: {
+    _id: string;
+    url: string;
+    originalFilename?: string;
+  };
 }

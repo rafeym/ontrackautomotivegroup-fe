@@ -85,7 +85,7 @@ async function CarDetails({ slug }: { slug: string }) {
                   }}
                   disabled={!car.isAvailable} // Disable booking if sold
                 />
-                <CarfaxButton carfaxUrl={car.carfaxUrl} />
+                <CarfaxButton carfaxPdf={car.carfaxPdf} />
               </div>
             </div>
             <p className="text-muted-foreground whitespace-pre-line mt-2">
@@ -111,7 +111,7 @@ async function CarDetails({ slug }: { slug: string }) {
               }}
               disabled={!car.isAvailable}
             />
-            <CarfaxButton carfaxUrl={car.carfaxUrl} />
+            <CarfaxButton carfaxPdf={car.carfaxPdf} />
           </div>
         </div>
       </div>

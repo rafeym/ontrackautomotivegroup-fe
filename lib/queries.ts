@@ -24,7 +24,11 @@ export const getAllCarsQuery = `
     address,
     slug,
     isAvailable,
-    carfaxUrl
+    "carfaxPdf": carfaxPdf.asset->{
+      _id,
+      url,
+      originalFilename
+    }
   }
 `;
 
@@ -65,7 +69,11 @@ export const getCarBySlugQuery = `
     isAvailable,
     description,
     slug,
-    carfaxUrl
+    "carfaxPdf": carfaxPdf.asset->{
+      _id,
+      url,
+      originalFilename
+    }
   }
 `;
 
@@ -95,7 +103,11 @@ export const getLatestCarsQuery = `
     address,
     isAvailable,
     slug,
-    carfaxUrl
+    "carfaxPdf": carfaxPdf.asset->{
+      _id,
+      url,
+      originalFilename
+    }
   }
 `;
 
