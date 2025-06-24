@@ -66,3 +66,20 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Prevent layout shift during loading */
+  .content-visibility-auto {
+    content-visibility: auto;
+  }
+
+  /* Smooth transitions for loading states */
+  .loading-transition {
+    transition: opacity 0.2s ease-in-out;
+  }
+
+  /* Ensure minimum height for inventory page */
+  .inventory-min-height {
+    min-height: calc(100vh - 200px);
+  }
+}

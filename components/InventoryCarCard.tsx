@@ -46,6 +46,7 @@ const InventoryCarCard = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const [pendingFilters, setPendingFilters] = useState<{
     make: string[];
@@ -114,10 +115,17 @@ const InventoryCarCard = () => {
 
   useEffect(() => {
     async function loadCars() {
-      // Use cached client for initial data fetch
-      const allCars: Car[] = await cachedSanityClient.fetch(getAllCarsQuery);
-      setCars(allCars);
-      setFilteredCars(sortCars(allCars, sortBy));
+      try {
+        setIsInitialLoading(true);
+        // Use cached client for initial data fetch
+        const allCars: Car[] = await cachedSanityClient.fetch(getAllCarsQuery);
+        setCars(allCars);
+        setFilteredCars(sortCars(allCars, sortBy));
+      } catch (error) {
+        console.error("Error loading cars:", error);
+      } finally {
+        setIsInitialLoading(false);
+      }
     }
     loadCars();
 
@@ -293,7 +301,7 @@ const InventoryCarCard = () => {
       <div className="flex flex-col lg:flex-row px-4 py-8 gap-8">
         {/* Sidebar */}
         <aside className="hidden lg:block w-64 sticky top-4 self-start">
-          {isLoading ? (
+          {isInitialLoading ? (
             <SkeletonFilter />
           ) : (
             <Filters
@@ -401,7 +409,7 @@ const InventoryCarCard = () => {
           </div>
 
           {/* No results */}
-          {!isLoading && !isFiltering && filteredCars.length === 0 ? (
+          {!isInitialLoading && !isFiltering && filteredCars.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center text-gray-600 space-y-4">
               <p className="text-lg font-semibold">
                 No cars found with the selected filters.
@@ -415,10 +423,10 @@ const InventoryCarCard = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 content-start">
-              {isLoading || isFiltering
-                ? Array.from({ length: 6 }).map((_, i) => (
-                    <SkeletonCard key={i} />
-                  ))
+              {isInitialLoading || isFiltering
+                ? Array.from({ length: isInitialLoading ? 9 : 6 }).map(
+                    (_, i) => <SkeletonCard key={i} />
+                  )
                 : visibleCars.map((car) => (
                     <Card
                       key={car._id}
@@ -514,7 +522,7 @@ const InventoryCarCard = () => {
 
           {/* Show More */}
           {hasMoreToShow &&
-            !isLoading &&
+            !isInitialLoading &&
             !isFiltering &&
             filteredCars.length > 0 && (
               <div className="flex justify-center mt-8">

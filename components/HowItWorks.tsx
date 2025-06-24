@@ -1,4 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const steps = [
   {
@@ -55,6 +57,18 @@ export function HowItWorks() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Browse Inventory Button */}
+      <div className="text-center mt-12">
+        <Link href="/inventory">
+          <Button
+            size="lg"
+            className="bg-black hover:bg-gray-800 text-white px-8 py-3"
+          >
+            Browse Inventory
+          </Button>
+        </Link>
       </div>
     </section>
   );

@@ -188,14 +188,6 @@ export default async function CarDetailsPage(props: { params: paramsType }) {
                   </p>
                   <p className="text-sm font-medium">{car.interiorColor}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">City MPG</p>
-                  <p className="text-sm font-medium">{car.cityMpg}L</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Highway MPG</p>
-                  <p className="text-sm font-medium">{car.highwayMpg}L</p>
-                </div>
               </div>
             </div>
           </CardContent>
