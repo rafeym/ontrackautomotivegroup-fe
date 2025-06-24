@@ -45,10 +45,10 @@ export function FeaturedListings() {
       </div>
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
         {isLoading
           ? // Loading skeleton
-            Array.from({ length: 3 }).map((_, i) => (
+            Array.from({ length: 4 }).map((_, i) => (
               <Card key={i} className="overflow-hidden shadow-sm animate-pulse">
                 <div className="w-full h-48 bg-gray-200" />
                 <CardHeader>

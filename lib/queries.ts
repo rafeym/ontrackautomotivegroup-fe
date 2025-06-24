@@ -68,7 +68,7 @@ export const getCarBySlugQuery = `
 
 // Query to get the latest cars for the featured listing component
 export const getLatestCarsQuery = `
-  *[_type == "car"] | order(_createdAt desc)[0...3]{
+  *[_type == "car"] | order(_createdAt desc)[0...4]{
     _id,
     vin,
     year,
@@ -104,4 +104,23 @@ export const getAllFilterOptionsQuery = `{
   "fuelTypes": *[_type == "car"].fuelType,
   "transmissions": *[_type == "car"].transmission,
   "bodyTypes": *[_type == "car"].bodyType
+}`;
+
+export const getBookingsQuery = `*[_type == "booking"] | order(date desc) {
+  _id,
+  name,
+  email,
+  phone,
+  timeSlot,
+  date,
+  status,
+  bookingKey,
+  car {
+    vin,
+    make,
+    model,
+    year,
+    mileage,
+    price
+  }
 }`;
