@@ -44,7 +44,10 @@ export const getCarBySlugQuery = `
     make,
     model,
     trim,
-    images,
+    "images": images[]{
+      "url": asset->url,
+      "metadata": asset->metadata
+    },
     mileage,
     exteriorColor,
     interiorColor,

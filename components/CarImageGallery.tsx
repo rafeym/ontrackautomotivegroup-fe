@@ -4,6 +4,7 @@ import { useState } from "react";
 import { urlFor } from "@/lib/imageUrl";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { X } from "lucide-react";
+import Image from "next/image";
 
 interface CarImageGalleryProps {
   images: SanityImageSource[];
@@ -24,12 +25,18 @@ export default function CarImageGallery({ images }: CarImageGalleryProps) {
         className="w-full rounded-lg overflow-hidden border cursor-pointer"
         onClick={() => setLightboxImage(selectedImage)}
       >
-        <img
-          src={urlFor(selectedImage)?.url()}
+        <Image
+          src={
+            urlFor(selectedImage)?.width(800).height(600).quality(85).url() ||
+            ""
+          }
           alt="Main Car Image"
           width={800}
-          height={400}
-          className="w-full"
+          height={600}
+          className="w-full h-auto"
+          priority={true}
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
         />
       </div>
 
@@ -43,12 +50,15 @@ export default function CarImageGallery({ images }: CarImageGalleryProps) {
               img === selectedImage ? "ring-2 ring-blue-500" : ""
             }`}
           >
-            <img
-              src={urlFor(img)?.url()}
+            <Image
+              src={urlFor(img)?.width(96).height(96).quality(75).url() || ""}
               alt={`Thumbnail ${index + 1}`}
               width={96}
               height={96}
               className="w-full h-full object-cover"
+              loading={index < 3 ? "eager" : "lazy"}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
             />
           </button>
         ))}
@@ -69,10 +79,19 @@ export default function CarImageGallery({ images }: CarImageGalleryProps) {
           >
             <X />
           </button>
-          <img
-            src={urlFor(lightboxImage)?.url()}
+          <Image
+            src={
+              urlFor(lightboxImage)
+                ?.width(1200)
+                .height(800)
+                .quality(90)
+                .url() || ""
+            }
             alt="Enlarged Car Image"
+            width={1200}
+            height={800}
             className="max-w-[90%] max-h-[90%] object-contain rounded-lg shadow-lg"
+            priority={true}
           />
         </div>
       )}

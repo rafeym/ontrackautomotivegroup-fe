@@ -4,7 +4,23 @@ import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 
 const builder = imageUrlBuilder(cachedSanityClient);
 
-export function urlFor(source?: SanityImageSource) {
+export function urlFor(
+  source?: SanityImageSource | { url: string; metadata?: any }
+) {
   if (!source) return null;
+
+  // Handle the new optimized image format
+  if (typeof source === "object" && "url" in source) {
+    return {
+      url: () => source.url,
+      width: (w: number) => ({
+        height: (h: number) => ({
+          quality: (q: number) => ({ url: () => source.url }),
+        }),
+      }),
+    };
+  }
+
+  // Handle the original Sanity image format
   return builder.image(source);
 }

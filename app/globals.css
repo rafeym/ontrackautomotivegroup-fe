@@ -65,6 +65,27 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Performance optimizations */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+
+  /* Optimize animations for performance */
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
 }
 
 @layer utilities {
@@ -81,5 +102,11 @@
   /* Ensure minimum height for inventory page */
   .inventory-min-height {
     min-height: calc(100vh - 200px);
+  }
+
+  /* Optimize image loading */
+  .image-optimized {
+    will-change: transform;
+    transform: translateZ(0);
   }
 }

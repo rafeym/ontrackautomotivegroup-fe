@@ -2,6 +2,7 @@ import { fetchSanityQuery } from "@/lib/fetchSanity";
 import { getAllCarSlugsQuery, getCarBySlugQuery } from "@/lib/queries";
 import { notFound } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
+import { Suspense } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import BookAppointmentModal from "@/components/BookingAppointmentModal";
 import { Separator } from "@/components/ui/separator";
 import CarfaxButton from "@/components/CarfaxButton";
 import { Metadata } from "next";
+import SkeletonDetail from "@/components/SkeletonDetail";
 
 export const revalidate = 86400;
 
@@ -38,14 +40,22 @@ export async function generateMetadata(props: {
   const title = `${car.year} ${car.make} ${car.model} - Car Details`;
   const description = `View details for this ${car.year} ${car.make} ${car.model} including price, specifications, and more.`;
 
+  // Preload the first image for better performance
+  const firstImageUrl = car.images?.[0]?.url || car.images?.[0]?.asset?.url;
+
   return {
     title,
     description,
+    other: firstImageUrl
+      ? {
+          'link[rel="preload"]': firstImageUrl,
+        }
+      : {},
   };
 }
 
-export default async function CarDetailsPage(props: { params: paramsType }) {
-  const { slug } = await props.params;
+// Separate component for car details to enable streaming
+async function CarDetails({ slug }: { slug: string }) {
   const car = await fetchSanityQuery(getCarBySlugQuery, { slug });
 
   if (!car) {
@@ -194,5 +204,15 @@ export default async function CarDetailsPage(props: { params: paramsType }) {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default async function CarDetailsPage(props: { params: paramsType }) {
+  const { slug } = await props.params;
+
+  return (
+    <Suspense fallback={<SkeletonDetail />}>
+      <CarDetails slug={slug} />
+    </Suspense>
   );
 }

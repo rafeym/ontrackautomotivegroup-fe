@@ -241,6 +241,11 @@ const InventoryCarCard = () => {
     ]);
 
     setIsFiltering(false);
+
+    // Scroll to top after filters are applied
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleResetFilters = () => {
