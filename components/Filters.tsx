@@ -81,7 +81,7 @@ const Filters = ({
 
     const filtersFromURL = parseFilters();
     setPendingFilters(filtersFromURL);
-  }, []);
+  }, [searchParams, setPendingFilters]);
 
   // Fetch all filter options
   useEffect(() => {

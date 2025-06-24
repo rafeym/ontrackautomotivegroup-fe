@@ -48,7 +48,6 @@ const InventoryCarCard = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [positionRestored, setPositionRestored] = useState(false);
 
   const [pendingFilters, setPendingFilters] = useState<{
     make: string[];
@@ -91,9 +90,6 @@ const InventoryCarCard = () => {
       if (savedScrollPosition) {
         setTimeout(() => {
           window.scrollTo(0, parseInt(savedScrollPosition));
-          setPositionRestored(true);
-          // Hide the indicator after 2 seconds
-          setTimeout(() => setPositionRestored(false), 2000);
         }, 100);
       }
     }
@@ -113,7 +109,7 @@ const InventoryCarCard = () => {
   }, []);
 
   // Save scroll position and view more state before navigation
-  const handleCarClick = (carSlug: string) => {
+  const handleCarClick = () => {
     if (typeof window !== "undefined") {
       sessionStorage.setItem(
         "inventory-visible-count",
@@ -606,7 +602,7 @@ const InventoryCarCard = () => {
 
                         <Link
                           href={`/inventory/${car.slug.current}`}
-                          onClick={() => handleCarClick(car.slug.current)}
+                          onClick={handleCarClick}
                         >
                           <Button className="mt-3 w-full">View Details</Button>
                         </Link>
