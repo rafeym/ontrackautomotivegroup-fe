@@ -11,6 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import CarfaxButton from "@/components/CarfaxButton";
 import { Metadata } from "next";
 
+export const revalidate = 86400;
+
 export type paramsType = Promise<{ slug: string }>;
 
 // Generate static params at build time
