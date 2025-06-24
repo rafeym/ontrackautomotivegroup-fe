@@ -393,7 +393,7 @@ const InventoryCarCard = () => {
         {/* Car Grid */}
         <section className="flex-1">
           {/* Sort and Filters Row */}
-          <div className="sticky top-0 z-10 bg-white pb-4 pt-2 lg:px-0 -mx-4 px-4">
+          <div className="sticky top-0 z-10 bg-white pb-4 pt-2 -mx-4 px-4">
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 {/* Active Filters - Mobile/Tablet */}
