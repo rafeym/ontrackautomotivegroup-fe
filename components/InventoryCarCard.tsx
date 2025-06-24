@@ -31,8 +31,9 @@ import { useFavorites } from "@/context/FavoritesContext";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { sanityClient, cachedSanityClient } from "@/lib/sanityClient";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import Image from "next/image";
 
-const INITIAL_VISIBLE_COUNT = 9;
+const INITIAL_VISIBLE_COUNT = 6;
 const LOAD_MORE_COUNT = 6;
 
 const InventoryCarCard = () => {
@@ -47,6 +48,7 @@ const InventoryCarCard = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [positionRestored, setPositionRestored] = useState(false);
 
   const [pendingFilters, setPendingFilters] = useState<{
     make: string[];
@@ -65,6 +67,74 @@ const InventoryCarCard = () => {
   });
 
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
+
+  // Restore scroll position and view more state on component mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedVisibleCount = sessionStorage.getItem(
+        "inventory-visible-count"
+      );
+      const savedScrollPosition = sessionStorage.getItem(
+        "inventory-scroll-position"
+      );
+      const savedSortBy = sessionStorage.getItem("inventory-sort-by");
+
+      if (savedVisibleCount) {
+        setVisibleCount(parseInt(savedVisibleCount));
+      }
+
+      if (savedSortBy) {
+        setSortBy(savedSortBy);
+      }
+
+      // Restore scroll position after a short delay to ensure content is rendered
+      if (savedScrollPosition) {
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(savedScrollPosition));
+          setPositionRestored(true);
+          // Hide the indicator after 2 seconds
+          setTimeout(() => setPositionRestored(false), 2000);
+        }, 100);
+      }
+    }
+
+    // Cleanup function to clear saved state when component unmounts
+    return () => {
+      // Only clear if we're navigating away from inventory (not just component re-render)
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/inventory")
+      ) {
+        sessionStorage.removeItem("inventory-visible-count");
+        sessionStorage.removeItem("inventory-scroll-position");
+        sessionStorage.removeItem("inventory-sort-by");
+      }
+    };
+  }, []);
+
+  // Save scroll position and view more state before navigation
+  const handleCarClick = (carSlug: string) => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(
+        "inventory-visible-count",
+        visibleCount.toString()
+      );
+      sessionStorage.setItem(
+        "inventory-scroll-position",
+        window.scrollY.toString()
+      );
+      sessionStorage.setItem("inventory-sort-by", sortBy);
+    }
+  };
+
+  // Clear saved state when filters are applied
+  const clearSavedState = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("inventory-visible-count");
+      sessionStorage.removeItem("inventory-scroll-position");
+      sessionStorage.removeItem("inventory-sort-by");
+    }
+  };
 
   // Effect to handle URL parameters
   useEffect(() => {
@@ -246,6 +316,9 @@ const InventoryCarCard = () => {
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
+
+    // Clear saved state when filters are applied
+    clearSavedState();
   };
 
   const handleResetFilters = () => {
@@ -260,6 +333,9 @@ const InventoryCarCard = () => {
     setFilteredCars(sortCars(cars, sortBy));
     setVisibleCount(INITIAL_VISIBLE_COUNT);
     router.push(pathname, { scroll: false });
+
+    // Clear saved state when filters are reset
+    clearSavedState();
   };
 
   const handleSortChange = (value: string) => {
@@ -429,7 +505,7 @@ const InventoryCarCard = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 content-start">
               {isInitialLoading || isFiltering
-                ? Array.from({ length: isInitialLoading ? 9 : 6 }).map(
+                ? Array.from({ length: isInitialLoading ? 6 : 6 }).map(
                     (_, i) => <SkeletonCard key={i} />
                   )
                 : visibleCars.map((car) => (
@@ -438,10 +514,22 @@ const InventoryCarCard = () => {
                       className="hover:shadow-lg transition rounded-xl overflow-hidden group relative border"
                     >
                       <CardHeader className="p-0 relative">
-                        <img
-                          src={urlFor(car.images?.[0])?.url()}
-                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                        <Image
+                          src={
+                            urlFor(car.images?.[0])
+                              ?.width(256)
+                              .height(192)
+                              .quality(75)
+                              .url() ||
+                            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDI1NiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTYiIGhlaWdodD0iMTkyIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMjggOTZDMTA5LjY2IDk2IDk0LjY2NjcgMTExIDk0LjY2NjcgMTI5LjMzQzk0LjY2NjcgMTQ3LjY2IDEwOS42NiAxNjIuNjYgMTI4IDE2Mi42NkMxNDYuMzQgMTYyLjY2IDE2MS4zMyAxNDcuNjYgMTYxLjMzIDEyOS4zM0MxNjEuMzMgMTExIDE0Ni4zNCA5NiAxMjggOTZaIiBmaWxsPSIjRDREOUUxIi8+CjxwYXRoIGQ9Ik0xMjggMTQ2LjY2QzExOS4xNyAxNDYuNjYgMTEyIDEzOS40OSAxMTIgMTMwLjY2QzExMiAxMjEuODMgMTE5LjE3IDExNC42NiAxMjggMTE0LjY2QzEzNi44MyAxMTQuNjYgMTQ0IDEyMS44MyAxNDQgMTMwLjY2QzE0NCAxMzkuNDkgMTM2LjgzIDE0Ni42NiAxMjggMTQ2LjY2WiIgZmlsbD0iI0M3Q0RENyIvPgo8L3N2Zz4K"
+                          }
                           alt={`${car.year} ${car.make} ${car.model} ${car.trim}`}
+                          width={256}
+                          height={192}
+                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                          placeholder="blur"
+                          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                         />
                         <Button
                           variant="ghost"
@@ -516,7 +604,10 @@ const InventoryCarCard = () => {
                           )}
                         </div>
 
-                        <Link href={`/inventory/${car.slug.current}`}>
+                        <Link
+                          href={`/inventory/${car.slug.current}`}
+                          onClick={() => handleCarClick(car.slug.current)}
+                        >
                           <Button className="mt-3 w-full">View Details</Button>
                         </Link>
                       </CardContent>

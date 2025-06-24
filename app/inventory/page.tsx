@@ -29,7 +29,7 @@ const Inventory = () => {
 const InventorySkeleton = () => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-      {Array.from({ length: 9 }).map((_, i) => (
+      {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="h-48 bg-gray-200 animate-pulse"></div>
           <div className="p-4 space-y-3">

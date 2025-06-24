@@ -109,4 +109,16 @@
     will-change: transform;
     transform: translateZ(0);
   }
+
+  /* Mobile performance optimizations */
+  @media (max-width: 768px) {
+    .mobile-optimized {
+      contain: layout style paint;
+    }
+
+    .mobile-image {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+  }
 }
