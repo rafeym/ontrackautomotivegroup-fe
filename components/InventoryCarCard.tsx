@@ -513,15 +513,15 @@ const InventoryCarCard = () => {
                         <Image
                           src={
                             urlFor(car.images?.[0])
-                              ?.width(256)
-                              .height(192)
-                              .quality(75)
+                              ?.width(400)
+                              .height(300)
+                              .quality(85)
                               .url() ||
                             "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDI1NiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTYiIGhlaWdodD0iMTkyIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMjggOTZDMTA5LjY2IDk2IDk0LjY2NjcgMTExIDk0LjY2NjcgMTI5LjMzQzk0LjY2NjcgMTQ3LjY2IDEwOS42NiAxNjIuNjYgMTI4IDE2Mi42NkMxNDYuMzQgMTYyLjY2IDE2MS4zMyAxNDcuNjYgMTYxLjMzIDEyOS4zM0MxNjEuMzMgMTExIDE0Ni4zNCA5NiAxMjggOTZaIiBmaWxsPSIjRDREOUUxIi8+CjxwYXRoIGQ9Ik0xMjggMTQ2LjY2QzExOS4xNyAxNDYuNjYgMTEyIDEzOS40OSAxMTIgMTMwLjY2QzExMiAxMjEuODMgMTE5LjE3IDExNC42NiAxMjggMTE0LjY2QzEzNi44MyAxMTQuNjYgMTQ0IDEyMS44MyAxNDQgMTMwLjY2QzE0NCAxMzkuNDkgMTM2LjgzIDE0Ni42NiAxMjggMTQ2LjY2WiIgZmlsbD0iI0M3Q0RENyIvPgo8L3N2Zz4K"
                           }
                           alt={`${car.year} ${car.make} ${car.model} ${car.trim}`}
-                          width={256}
-                          height={192}
+                          width={400}
+                          height={300}
                           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
                           placeholder="blur"
