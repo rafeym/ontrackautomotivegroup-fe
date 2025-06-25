@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <main>
+      <h1 className="sr-only">OnTrackAutomotiveGroup</h1>
       <HeroWithImage />
       <HeroWithFilter />
       <AboutUs />

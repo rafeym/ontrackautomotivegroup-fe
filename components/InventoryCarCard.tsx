@@ -432,8 +432,11 @@ const InventoryCarCard = () => {
 
                 {/* Sort Dropdown */}
                 <div className="lg:ml-auto">
+                  <label htmlFor="sort-by-select" className="sr-only">
+                    Sort by
+                  </label>
                   <Select value={sortBy} onValueChange={handleSortChange}>
-                    <SelectTrigger className="w-52">
+                    <SelectTrigger className="w-52" id="sort-by-select">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
@@ -531,6 +534,7 @@ const InventoryCarCard = () => {
                           variant="ghost"
                           size="icon"
                           className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full"
+                          aria-label="Favorite"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();

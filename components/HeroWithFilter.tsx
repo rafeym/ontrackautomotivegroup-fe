@@ -128,11 +128,14 @@ export function HeroWithFilter() {
         >
           {/* Make */}
           <div>
-            <label className="block text-left text-sm font-medium mb-1 text-gray-700">
+            <label
+              htmlFor="make-select"
+              className="block text-left text-sm font-medium mb-1 text-gray-700"
+            >
               Make
             </label>
             <Select value={selectedMake} onValueChange={setSelectedMake}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" id="make-select">
                 <SelectValue placeholder="Select Make" />
               </SelectTrigger>
               <SelectContent>
@@ -148,7 +151,10 @@ export function HeroWithFilter() {
 
           {/* Model */}
           <div>
-            <label className="block text-left text-sm font-medium mb-1 text-gray-700">
+            <label
+              htmlFor="make-model"
+              className="block text-left text-sm font-medium mb-1 text-gray-700"
+            >
               Model
             </label>
             <Select
@@ -156,7 +162,7 @@ export function HeroWithFilter() {
               onValueChange={setSelectedModel}
               disabled={isAll(selectedMake) || availableModels.length === 0}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="make-model" className="w-full">
                 <SelectValue placeholder="Select Model" />
               </SelectTrigger>
               <SelectContent>
@@ -172,7 +178,10 @@ export function HeroWithFilter() {
 
           {/* Year */}
           <div>
-            <label className="block text-left text-sm font-medium mb-1 text-gray-700">
+            <label
+              htmlFor="year-select"
+              className="block text-left text-sm font-medium mb-1 text-gray-700"
+            >
               Year
             </label>
             <Select
@@ -180,7 +189,7 @@ export function HeroWithFilter() {
               onValueChange={setSelectedYear}
               disabled={isAll(selectedModel) || availableYears.length === 0}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="year-select" className="w-full">
                 <SelectValue placeholder="Select Year" />
               </SelectTrigger>
               <SelectContent>
