@@ -8,15 +8,37 @@ const SkeletonDetail = () => {
         {/* Left: Image Skeleton */}
         <div className="w-full lg:w-2/3 space-y-4">
           <Skeleton className="w-full h-[400px] rounded-lg animate-pulse" />
-          <div className="flex gap-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="w-24 h-24 rounded animate-pulse" />
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {Array.from({ length: 11 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                className="w-24 h-24 rounded animate-pulse flex-none"
+              />
             ))}
           </div>
           <div className="space-y-4 mt-8">
-            <Skeleton className="h-6 w-32 animate-pulse" />
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-6 w-32 animate-pulse" />
+              <div className="hidden gap-2 min-[505px]:flex">
+                <Skeleton className="h-10 w-32 rounded animate-pulse" />
+                <Skeleton className="h-10 w-28 rounded animate-pulse" />
+              </div>
+            </div>
             <Skeleton className="h-4 w-full animate-pulse" />
             <Skeleton className="h-4 w-3/4 animate-pulse" />
+          </div>
+
+          {/* Dealership Information */}
+          <div className="mt-8">
+            <Skeleton className="h-6 w-48 animate-pulse mb-4" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-40 animate-pulse" />
+              <Skeleton className="h-4 w-60 animate-pulse" />
+            </div>
+            <div className="flex flex-col gap-2 mt-5 min-[505px]:hidden">
+              <Skeleton className="h-10 w-full rounded animate-pulse" />
+              <Skeleton className="h-10 w-full rounded animate-pulse" />
+            </div>
           </div>
         </div>
 
