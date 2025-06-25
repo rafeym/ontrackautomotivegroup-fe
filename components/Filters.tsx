@@ -265,11 +265,14 @@ const Filters = ({
             Vehicle Details
           </h3>
           <div className="space-y-3">
+            <label htmlFor="make-filter" className="sr-only">
+              Make
+            </label>
             <Select
               value={pendingFilters.make[0] || ""}
               onValueChange={(value) => handleFilterChange("make", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger id="make-filter">
                 <SelectValue placeholder="Select Make" />
               </SelectTrigger>
               <SelectContent>
@@ -282,44 +285,54 @@ const Filters = ({
             </Select>
 
             {pendingFilters.make.length > 0 && (
-              <Select
-                value={pendingFilters.model[0] || ""}
-                onValueChange={(value) => handleFilterChange("model", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredModels.map((model) => (
-                    <SelectItem key={model} value={model}>
-                      {model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <>
+                <label htmlFor="model-filter" className="sr-only">
+                  Model
+                </label>
+                <Select
+                  value={pendingFilters.model[0] || ""}
+                  onValueChange={(value) => handleFilterChange("model", value)}
+                >
+                  <SelectTrigger id="model-filter">
+                    <SelectValue placeholder="Select Model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredModels.map((model) => (
+                      <SelectItem key={model} value={model}>
+                        {model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
             )}
 
             {pendingFilters.model.length > 0 && (
-              <Select
-                value={
-                  pendingFilters.year.length === 0
-                    ? "all"
-                    : pendingFilters.year[0]
-                }
-                onValueChange={(value) => handleFilterChange("year", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
-                  {filteredYears.map((year) => (
-                    <SelectItem key={year} value={String(year)}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <>
+                <label htmlFor="year-filter" className="sr-only">
+                  Year
+                </label>
+                <Select
+                  value={
+                    pendingFilters.year.length === 0
+                      ? "all"
+                      : pendingFilters.year[0]
+                  }
+                  onValueChange={(value) => handleFilterChange("year", value)}
+                >
+                  <SelectTrigger id="year-filter">
+                    <SelectValue placeholder="Select Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Years</SelectItem>
+                    {filteredYears.map((year) => (
+                      <SelectItem key={year} value={String(year)}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
             )}
           </div>
         </div>
@@ -330,11 +343,14 @@ const Filters = ({
             Specifications
           </h3>
           <div className="grid grid-cols-2 gap-3">
+            <label htmlFor="fuel-type-filter" className="sr-only">
+              Fuel Type
+            </label>
             <Select
               value={pendingFilters.fuelType[0] || ""}
               onValueChange={(value) => handleFilterChange("fuelType", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger id="fuel-type-filter">
                 <SelectValue placeholder="Fuel Type" />
               </SelectTrigger>
               <SelectContent>
@@ -346,13 +362,16 @@ const Filters = ({
               </SelectContent>
             </Select>
 
+            <label htmlFor="transmission-filter" className="sr-only">
+              Transmission
+            </label>
             <Select
               value={pendingFilters.transmission[0] || ""}
               onValueChange={(value) =>
                 handleFilterChange("transmission", value)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger id="transmission-filter">
                 <SelectValue placeholder="Transmission" />
               </SelectTrigger>
               <SelectContent>
@@ -364,11 +383,14 @@ const Filters = ({
               </SelectContent>
             </Select>
 
+            <label htmlFor="body-type-filter" className="sr-only">
+              Body Type
+            </label>
             <Select
               value={pendingFilters.bodyType[0] || ""}
               onValueChange={(value) => handleFilterChange("bodyType", value)}
             >
-              <SelectTrigger className="col-span-2">
+              <SelectTrigger className="col-span-2" id="body-type-filter">
                 <SelectValue placeholder="Body Type" />
               </SelectTrigger>
               <SelectContent>
