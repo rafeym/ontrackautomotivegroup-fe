@@ -177,8 +177,12 @@ export async function POST(req: NextRequest) {
         success: true,
         bookingId: result._id,
       });
-    } catch (error: any) {
-      if (error.message && error.message.includes("already exists")) {
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        error.message &&
+        error.message.includes("already exists")
+      ) {
         return NextResponse.json(
           { success: false, error: "This time slot is already booked." },
           { status: 400 }

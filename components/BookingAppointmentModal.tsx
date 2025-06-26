@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { formatCurrency } from "@/lib/utils";
 import { addDays, isBefore, isAfter } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -97,13 +97,6 @@ export default function BookAppointmentModal({
     return dates;
   };
 
-  // Function to get the date range for calendar
-  const getDateRange = () => {
-    const today = new Date();
-    const maxDate = addDays(today, 14);
-    return { fromDate: today, toDate: maxDate };
-  };
-
   // Function to fetch all booked slots for the entire date range
   const fetchAllBookedSlots = async () => {
     if (!car?.vin || hasFetchedAllSlotsRef.current) return;
@@ -134,14 +127,82 @@ export default function BookAppointmentModal({
     }
   };
 
-  // Function to get booked slots for a specific date
-  const getBookedSlotsForDate = (date: Date): string[] => {
-    const dateString = date.toISOString().split("T")[0];
-    return allBookedSlots[dateString] || [];
-  };
+  // Wrap fetchBookedSlotsWithSafety, startPolling, stopPolling, getBookedSlotsForDate in useCallback
+  const fetchBookedSlotsWithSafety = useCallback(
+    async (selectedDate: Date, carVin: string) => {
+      // Don't make API calls if session has timed out
+      if (hasTimedOutRef.current) {
+        return;
+      }
 
-  // Function to start polling
-  const startPolling = (fetchBookedSlots: () => Promise<void>) => {
+      const now = Date.now();
+
+      // Rate limiting: minimum 5 seconds between API calls (increased from 2)
+      if (now - lastApiCallRef.current < 5000) {
+        return;
+      }
+
+      // Check if polling has exceeded maximum duration
+      if (
+        pollingStartTimeRef.current &&
+        now - pollingStartTimeRef.current > maxPollingDuration
+      ) {
+        setHasTimedOut(true);
+        stopPolling();
+        return;
+      }
+
+      lastApiCallRef.current = now;
+
+      try {
+        const response = await fetch(
+          `/api/book-appointment?date=${selectedDate.toISOString()}&vin=${carVin}`,
+          {
+            // Add timeout to prevent hanging requests
+            signal: AbortSignal.timeout(5000),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setBookedSlots(data.bookedSlots || []);
+
+        // Reset error counter on successful request
+        consecutiveErrorsRef.current = 0;
+      } catch (error) {
+        consecutiveErrorsRef.current++;
+        console.error("Failed to fetch booked slots:", error);
+
+        // Stop polling after too many consecutive errors
+        if (consecutiveErrorsRef.current >= maxConsecutiveErrors) {
+          toast({
+            title: "Connection Error",
+            description:
+              "Unable to fetch booking updates. Please refresh the page to continue.",
+            variant: "destructive",
+          });
+          stopPolling();
+          return;
+        }
+
+        // Show warning after first error
+        if (consecutiveErrorsRef.current === 1) {
+          toast({
+            title: "Connection Issue",
+            description:
+              "Having trouble fetching updates. Will retry automatically.",
+            variant: "default",
+          });
+        }
+      }
+    },
+    []
+  );
+
+  const startPolling = useCallback((fetchBookedSlots: () => Promise<void>) => {
     // Don't start polling if session has timed out
     if (hasTimedOutRef.current) {
       return;
@@ -167,10 +228,9 @@ export default function BookAppointmentModal({
         document.title = "🟢 Live Booking";
       }
     }, 200);
-  };
+  }, []);
 
-  // Function to stop polling
-  const stopPolling = () => {
+  const stopPolling = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -191,82 +251,15 @@ export default function BookAppointmentModal({
         document.title = "⏸️ Booking Paused";
       }
     }, 200);
-  };
+  }, []);
 
-  // Enhanced fetch function with error handling and rate limiting
-  const fetchBookedSlotsWithSafety = async (
-    selectedDate: Date,
-    carVin: string
-  ) => {
-    // Don't make API calls if session has timed out
-    if (hasTimedOutRef.current) {
-      return;
-    }
-
-    const now = Date.now();
-
-    // Rate limiting: minimum 5 seconds between API calls (increased from 2)
-    if (now - lastApiCallRef.current < 5000) {
-      return;
-    }
-
-    // Check if polling has exceeded maximum duration
-    if (
-      pollingStartTimeRef.current &&
-      now - pollingStartTimeRef.current > maxPollingDuration
-    ) {
-      setHasTimedOut(true);
-      stopPolling();
-      return;
-    }
-
-    lastApiCallRef.current = now;
-
-    try {
-      const response = await fetch(
-        `/api/book-appointment?date=${selectedDate.toISOString()}&vin=${carVin}`,
-        {
-          // Add timeout to prevent hanging requests
-          signal: AbortSignal.timeout(5000),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setBookedSlots(data.bookedSlots || []);
-
-      // Reset error counter on successful request
-      consecutiveErrorsRef.current = 0;
-    } catch (error) {
-      consecutiveErrorsRef.current++;
-      console.error("Failed to fetch booked slots:", error);
-
-      // Stop polling after too many consecutive errors
-      if (consecutiveErrorsRef.current >= maxConsecutiveErrors) {
-        toast({
-          title: "Connection Error",
-          description:
-            "Unable to fetch booking updates. Please refresh the page to continue.",
-          variant: "destructive",
-        });
-        stopPolling();
-        return;
-      }
-
-      // Show warning after first error
-      if (consecutiveErrorsRef.current === 1) {
-        toast({
-          title: "Connection Issue",
-          description:
-            "Having trouble fetching updates. Will retry automatically.",
-          variant: "default",
-        });
-      }
-    }
-  };
+  const getBookedSlotsForDate = useCallback(
+    (date: Date): string[] => {
+      const dateString = date.toISOString().split("T")[0];
+      return allBookedSlots[dateString] || [];
+    },
+    [allBookedSlots]
+  );
 
   // Handle modal open/close
   const handleOpenChange = (newOpen: boolean) => {
@@ -357,7 +350,16 @@ export default function BookAppointmentModal({
     }
 
     return cleanup;
-  }, [open, selectedDate, car?.vin, formData.timeSlot, originalTitle]);
+  }, [
+    open,
+    selectedDate,
+    car?.vin,
+    formData.timeSlot,
+    originalTitle,
+    fetchBookedSlotsWithSafety,
+    startPolling,
+    stopPolling,
+  ]);
 
   // Visibility change listener
   useEffect(() => {
@@ -430,6 +432,9 @@ export default function BookAppointmentModal({
     formData.timeSlot,
     isPolling,
     originalTitle,
+    fetchBookedSlotsWithSafety,
+    startPolling,
+    stopPolling,
   ]);
 
   // Cleanup on component unmount
