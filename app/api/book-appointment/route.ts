@@ -76,9 +76,6 @@ export async function POST(req: NextRequest) {
   } = data;
 
   try {
-    const transaction = sanityClient.transaction();
-
-    // Check if car exists and is available
     const carData = await sanityClient.fetch(
       `*[_type == "car" && vin == $vin][0]{isAvailable}`,
       { vin }
@@ -103,23 +100,13 @@ export async function POST(req: NextRequest) {
 
     const dateOnlyString = date.split("T")[0];
     const formattedPhone = formatPhoneNumber(phone);
-    const bookingKey = `${vin}_${dateOnlyString}_${timeSlot}`;
+    // Sanitize timeSlot for use in _id
+    const safeTimeSlot = timeSlot.replace(/[^A-Za-z0-9_-]/g, "-");
+    const bookingKey = `${vin}_${dateOnlyString}_${safeTimeSlot}`;
+    const bookingId = `booking-${bookingKey}`;
 
-    // Atomic check: Has this exact slot already been booked?
-    const existing = await sanityClient.fetch(
-      `*[_type == "booking" && bookingKey == $bookingKey][0]`,
-      { bookingKey }
-    );
-
-    if (existing) {
-      return NextResponse.json(
-        { success: false, error: "This time slot is already booked." },
-        { status: 400 }
-      );
-    }
-
-    // Create booking
-    transaction.create({
+    const bookingDoc = {
+      _id: bookingId,
       _type: "booking",
       bookingKey,
       name,
@@ -135,62 +122,70 @@ export async function POST(req: NextRequest) {
         mileage,
         price,
       },
-    });
+    };
 
-    const result = await transaction.commit();
+    try {
+      const result = await sanityClient.create(bookingDoc);
+      // Send notifications
+      const message = `OnTrackAutomotiveGroup: Hi ${name}, we've received your appointment request for the ${year} ${make} ${model} (VIN: ${vin}). We'll contact you soon to confirm your appointment on ${dateOnlyString} at ${timeSlot}. Thank you!`;
 
-    // Send notifications
+      await client.messages.create({
+        body: message,
+        from: process.env.TWILIO_PHONE_NUMBER!,
+        to: formattedPhone,
+      });
 
-    const message = `OnTrackAutomotiveGroup: Hi ${name}, we’ve received your appointment request for the ${year} ${make} ${model} (VIN: ${vin}). We’ll contact you soon to confirm your appointment on ${dateOnlyString} at ${timeSlot}. Thank you!`;
+      const resend = new Resend(process.env.RESEND_API_KEY);
 
-    await client.messages.create({
-      body: message,
-      from: process.env.TWILIO_PHONE_NUMBER!,
-      to: formattedPhone,
-    });
+      await resend.emails.send({
+        from: "Booking <noreply@resend.dev>",
+        to: [process.env.DEALERSHIP_EMAIL!],
+        replyTo: email,
+        subject: `[Car Booking] - ${name} (${vin})`,
+        html: `
+      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+        <h2 style="color: #004085;">New Appointment Booking</h2>
+        <p><strong>Submitted on:</strong> ${new Date().toLocaleString()}</p>
+        <hr style="margin: 1rem 0;" />
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
+        <h3>Customer Details</h3>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Phone:</strong> ${phone || "N/A"}</p>
+        <hr style="margin: 1rem 0;" />
 
-    await resend.emails.send({
-      from: "Booking <noreply@resend.dev>",
-      to: [process.env.DEALERSHIP_EMAIL!],
-      replyTo: email,
-      subject: `[Car Booking] - ${name} (${vin})`,
-      html: `
-    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
-      <h2 style="color: #004085;">New Appointment Booking</h2>
-      <p><strong>Submitted on:</strong> ${new Date().toLocaleString()}</p>
-      <hr style="margin: 1rem 0;" />
+        <h3>Vehicle Details</h3>
+        <p><strong>VIN:</strong> ${vin}</p>
+        <p><strong>Make:</strong> ${make}</p>
+        <p><strong>Model:</strong> ${model}</p>
+        <p><strong>Year:</strong> ${year}</p>
+        <p><strong>Mileage:</strong> ${mileage} km</p>
+        <p><strong>Price:</strong> $${price}</p>
+        <hr style="margin: 1rem 0;" />
 
-      <h3>Customer Details</h3>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Phone:</strong> ${phone || "N/A"}</p>
-      <hr style="margin: 1rem 0;" />
+        <h3>Booking Information</h3>
+        <p><strong>Date:</strong> ${dateOnlyString}</p>
+        <p><strong>Time Slot:</strong> ${timeSlot}</p>
 
-      <h3>Vehicle Details</h3>
-      <p><strong>VIN:</strong> ${vin}</p>
-      <p><strong>Make:</strong> ${make}</p>
-      <p><strong>Model:</strong> ${model}</p>
-      <p><strong>Year:</strong> ${year}</p>
-      <p><strong>Mileage:</strong> ${mileage} km</p>
-      <p><strong>Price:</strong> $${price}</p>
-      <hr style="margin: 1rem 0;" />
+        <br/>
+        <p style="font-size: 0.9rem; color: #6c757d;">Please contact the customer to confirm or reschedule the appointment if needed.</p>
+      </div>
+    `,
+      });
 
-      <h3>Booking Information</h3>
-      <p><strong>Date:</strong> ${dateOnlyString}</p>
-      <p><strong>Time Slot:</strong> ${timeSlot}</p>
-
-      <br/>
-      <p style="font-size: 0.9rem; color: #6c757d;">Please contact the customer to confirm or reschedule the appointment if needed.</p>
-    </div>
-  `,
-    });
-
-    return NextResponse.json({
-      success: true,
-      bookingId: result.results[0].id,
-    });
+      return NextResponse.json({
+        success: true,
+        bookingId: result._id,
+      });
+    } catch (error: any) {
+      if (error.message && error.message.includes("already exists")) {
+        return NextResponse.json(
+          { success: false, error: "This time slot is already booked." },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
   } catch (error: unknown) {
     console.error("Error booking:", error);
     if (error instanceof Error) {
