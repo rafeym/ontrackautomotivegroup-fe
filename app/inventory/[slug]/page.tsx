@@ -88,7 +88,7 @@ async function CarDetails({ slug }: { slug: string }) {
                 <CarfaxButton carfaxPdf={car.carfaxPdf} />
               </div>
             </div>
-            <p className="text-muted-foreground whitespace-pre-line mt-2">
+            <p className="text-muted-foreground whitespace-pre-line mt-6">
               {car.description}
             </p>
           </div>
@@ -124,9 +124,14 @@ async function CarDetails({ slug }: { slug: string }) {
               <h2 className="text-2xl font-bold tracking-tight">
                 {car.year} {car.make} {car.model} {car.trim}
               </h2>
-              <p className="text-xl font-semibold text-blue-600">
-                {formatCurrency(car.price)}
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-semibold text-blue-600">
+                  {formatCurrency(car.price)}
+                </span>
+                <span className="text-xs text-muted-foreground italic">
+                  (Price before tax)
+                </span>
+              </div>
               <Badge
                 variant={car.isAvailable ? "default" : "destructive"}
                 className="text-sm px-3 py-1"

@@ -15,6 +15,7 @@ export default function CarImageGallery({ images }: CarImageGalleryProps) {
   const [lightboxImage, setLightboxImage] = useState<SanityImageSource | null>(
     null
   );
+  const selectedIndex = images.findIndex((img) => img === selectedImage);
 
   if (!images || images.length === 0) return null;
 
@@ -22,7 +23,7 @@ export default function CarImageGallery({ images }: CarImageGalleryProps) {
     <>
       {/* Main Image Section */}
       <div
-        className="w-full rounded-lg overflow-hidden border cursor-pointer"
+        className="w-full rounded-lg overflow-hidden border cursor-pointer relative"
         onClick={() => setLightboxImage(selectedImage)}
       >
         <Image
@@ -38,6 +39,12 @@ export default function CarImageGallery({ images }: CarImageGalleryProps) {
           placeholder="blur"
           blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
         />
+        {/* Image index/total badge */}
+        <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-3 py-1 rounded-full z-10 select-none">
+          {images.length > 1
+            ? `${selectedIndex + 1} / ${images.length}`
+            : `1 / 1`}
+        </div>
       </div>
 
       {/* Thumbnail Strip */}
