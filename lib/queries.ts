@@ -79,7 +79,7 @@ export const getCarBySlugQuery = `
 
 // Query to get the latest cars for the featured listing component
 export const getLatestCarsQuery = `
-  *[_type == "car"] | order(_createdAt desc)[0...4]{
+  *[_type == "car" && isAvailable == true] | order(_createdAt desc)[0...4]{
     _id,
     vin,
     year,
